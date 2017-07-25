@@ -21,7 +21,9 @@ if (sum(is.na(uitem))==0){
   print("uitem has no missing values -> further data preparation required") 
 }
 
-#TODO: Doppelte Einträge entfernen
+#Remove duplicate movies
+uitem <- uitem[!duplicated(uitem$movtitle), ]
+
 
 #Plot function to visualize movies (have to be manually selected)
 
