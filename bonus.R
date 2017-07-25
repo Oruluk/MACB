@@ -1,5 +1,15 @@
-library("ggplot2")
+#Name (Matrikelnummer): 
+#Patrick Deininger (1717571)
+#Alexander Haas (1668040)
+#Elena Wössner (1972072)
 
+
+library("ggplot2")
+#library(data.table)
+
+
+#########################################################################################################################
+#Preprocessing
 
 PATH_TO_DATA = "C:/Users/Patrick/Desktop/Studium/02 Master/Modeling and Analyzing Consumer Behaviour with R/Excercise/Bonus Challenge 2/"
 
@@ -12,51 +22,71 @@ uitem <- read.csv(paste(PATH_TO_DATA,"Bonuspunkte 2 - Datensatz uitem.csv", sep=
 if (sum(is.na(udata))==0){
   print("udata has no missing observations") 
 } else {
-  print("udata has no missing values -> further data preparation required") 
+  print("udata has missing values -> further data preparation required") 
 }
-
 if (sum(is.na(uitem))==0){
   print("uitem has no missing observations") 
 } else {
-  print("uitem has no missing values -> further data preparation required") 
+  print("uitem has missing values -> further data preparation required") 
 }
 
 #Remove duplicate movies
-uitem <- uitem[!duplicated(uitem$movtitle), ]
-
-
-#Plot function to visualize movies (have to be manually selected)
-
-#doesn't work
-#ggplot(uitem[3:21], aes(x=colnames(uitem)[3:21], y=apply(uitem[3:21], 2, sum))) + geom_bar(stat="identity")
-
-
-#genre.dist$number = data.table(apply(uitem[3:21], 2, sum))
-#genre.dist$type = as.factor(colnames(uitem)[3:21])
-#ggplot(genre.dist, aes(x=type, y=number, label="Genres")) + geom_bar(stat="identity")
-
+uitem_wd <- uitem[!duplicated(uitem$movtitle), ]
 
 
 #########################################################################################################################
 #Task 1
+
+sslastimpr <- function(data, maxCluster = 20) {
+  #variable initialization
+  SSw <- vector()
+  data <- data[-1:-2]
+  lastNoticeableImprovement <- 0
+  #k-means for various (i) clusternumbers
+  for (i in 2:maxCluster) {
+    #calculate Sum of squared errors
+    SSw[i] <- sum(kmeans(data, centers = i)$withinss)
+    #check if adding a new cluster reduced heterogenity given the previously defined parameters
+    if ((i>2) && SSw[i]<=SSw[i-1]*(1-improvementRequirement)){
+      lastNoticeableImprovement <- i
+    }
+  }
+  #return the highest number of clustes, which still fit the required improvement paramenters
+  return(lastNoticeableImprovement)
+}
+
+
 #k-means
 clusterFilms <- function(uitem){
   
   #Scaling
-  uitem_k <- scale(uitem[3:21])
+  #uitem_k <- scale(uitem[3:21])
+  
+  uitem_k = uitem[-1:-2]
   
   #Find a good number of clusters
-  ssplot <- function(data, maxCluster = 10){
+  ssplot <- function(data, maxCluster = 20, min_improve = 0.2){
     SSw <- vector()
+    lastImprovementCluster = 0
     for (i in 2:maxCluster){
       SSw[i] <- sum(kmeans(data, centers = i)$withinss)
+      if ((i>2) && (1-SSw[i]/SSw[i-1])>=min_improve){
+        lastImprovementCluster = i
+        min_improve=1000
+      }
     }
     plot(1:maxCluster, SSw, type = "b", xlab = "Number of Clusters", ylab = "Within groups sum of squares")
+    
+    return(lastImprovementCluster)
   }
-  ssplot(uitem_k)
   
-  #TODO Festlegung der Anzahl der Cluster mit ellbow kriterium  
-  fit = kmeans(uitem_k, 6)
+  number_of_clusters = ssplot(uitem_k)
+  
+  #Print number of CLusters
+  print(paste("Number of Clusters:", number_of_clusters))
+  
+  #Execute k-means for the identified number of clusters
+  fit = kmeans(uitem_k, number_of_clusters)
   
   #Append cluster assignment -> is not needed at the moment
   #uitem <- data.frame(uitem, fit$cluster)
@@ -77,7 +107,7 @@ getUserInfo <- function(userDF, userID){
   
   #sort the data in ascending order according to itemid
   activeUser = activeUser[order(activeUser[,1]),]
-
+  
   return(activeUser)  
 }
 
@@ -91,6 +121,7 @@ setUserFilmCluster <- function(movieCluster, activeUser){
   for (i in 1:length(activeUser$itemid)){
     activeUser$cluster[i] = movieCluster$cluster[activeUser$itemid[i]]
   }  
+  
   return(activeUser)
 }
 
@@ -104,10 +135,10 @@ getMeanClusterRating <- function(movieCluster, activeUser){
   
   #Identify the clusters with a mean > 3
   like = like[like$x>3,]
-  
+ 
   #Put the clusters in an int vector
-  #TODO: Clarify if it makes sense to return intVec instead of like
   intVec = as.vector(like[1])
+ 
   
   return(like)
 }
@@ -134,6 +165,7 @@ getGoodFilms <- function(like, movieCluster, uitem){
     #Choose randomly 100 movies
     recommend = sample(uitem$movid, 100, replace = FALSE, prob = NULL)
   }
+
   return(recommend)
 }
 
@@ -183,11 +215,12 @@ suggestFilms <- function(titleFilmDF, userDF, userid, noFilms){
   recommend = getRecommendedFilms(uitem, userDF, userid)
   
   #Get sample out of all recommendations
+  #Recommend maximum the number of films in recommend 
   final_recommend = sample(recommend$movtitle, min(noFilms, length(recommend$movtitle)), replace=FALSE, prob=NULL)
   
   #Print recommendations
   print("Diese Filme könnten Ihnen auch gefallen:")
-  
+
   for (i in final_recommend){
     print(i)
   }
@@ -196,10 +229,20 @@ suggestFilms <- function(titleFilmDF, userDF, userid, noFilms){
 #########################################################################################################################
 #Main
 
-titleFilmDF = uitem
+titleFilmDF = uitem_wd
 userDF = udata
-userid = 30
+userid = 159
 noFilms = 15
 
 
 suggestFilms(titleFilmDF, userDF, userid, noFilms)
+
+
+
+
+
+#Plot function to visualize movies (have to be manually selected)
+
+#genre.dist$number = data.table(apply(uitem[3:21], 2, sum))
+#genre.dist$type = as.factor(colnames(uitem)[3:21])
+#ggplot(genre.dist, aes(x=type, y=number, label="Genres")) + geom_bar(stat="identity")
