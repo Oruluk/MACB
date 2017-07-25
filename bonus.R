@@ -1,7 +1,7 @@
 library("ggplot2")
 
 
-PATH_TO_DATA = "C:/Users/Patrick/Desktop/Studium/02 Master/Modeling and Analyzing Consumer Behaviour with R/Excercise/Bonus2/"
+PATH_TO_DATA = "C:/Users/Patrick/Desktop/Studium/02 Master/Modeling and Analyzing Consumer Behaviour with R/Excercise/Bonus Challenge 2/"
 
 
 #Read data
@@ -29,9 +29,9 @@ if (sum(is.na(uitem))==0){
 #ggplot(uitem[3:21], aes(x=colnames(uitem)[3:21], y=apply(uitem[3:21], 2, sum))) + geom_bar(stat="identity")
 
 
-genre.dist$number = data.table(apply(uitem[3:21], 2, sum))
-genre.dist$type = as.factor(colnames(uitem)[3:21])
-ggplot(genre.dist, aes(x=type, y=number, label="Genres")) + geom_bar(stat="identity")
+#genre.dist$number = data.table(apply(uitem[3:21], 2, sum))
+#genre.dist$type = as.factor(colnames(uitem)[3:21])
+#ggplot(genre.dist, aes(x=type, y=number, label="Genres")) + geom_bar(stat="identity")
 
 
 
@@ -196,7 +196,7 @@ suggestFilms <- function(titleFilmDF, userDF, userid, noFilms){
 
 titleFilmDF = uitem
 userDF = udata
-userid = 200
+userid = 30
 noFilms = 15
 
 
